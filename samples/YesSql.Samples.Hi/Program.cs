@@ -1,9 +1,9 @@
 ﻿using System;
+using Microsoft.Data.Sqlite;
+using YesSql.Core.Services;
 using YesSql.Samples.Hi.Indexes;
 using YesSql.Samples.Hi.Models;
-using YesSql.Core.Services;
-using System.Data.SQLite;
-using YesSql.Core.Storage.InMemory;
+using YesSql.Storage.InMemory;
 
 namespace YesSql.Samples.Hi
 {
@@ -13,10 +13,15 @@ namespace YesSql.Samples.Hi
         {
             var store = new Store(cfg =>
             {
-                cfg.ConnectionFactory = new DbConnectionFactory<SQLiteConnection>(@"Data Source=:memory:", true);
+                cfg.ConnectionFactory = new DbConnectionFactory<SqliteConnection>(@"Data Source=:memory:", true);
                 cfg.DocumentStorageFactory = new InMemoryDocumentStorageFactory();
+            });
 
-                cfg.Migrations.Add(builder => builder
+            store.InitializeAsync().Wait();
+
+            using (var session = store.CreateSession())
+            {
+                session.ExecuteMigration(builder => builder
                     .CreateMapIndexTable(nameof(BlogPostByAuthor), table => table
                         .Column<string>("Author")
                     )
@@ -25,7 +30,7 @@ namespace YesSql.Samples.Hi
                         .Column<int>("Day")
                     )
                 );
-            });
+            };
 
             // register available indexes
             store.RegisterIndexes<BlogPostIndexProvider>();
@@ -37,17 +42,17 @@ namespace YesSql.Samples.Hi
                 Author = "Bill",
                 Content = "Hello",
                 PublishedUtc = DateTime.UtcNow,
-                Tags = new[] {"Hello", "YesSql"}
+                Tags = new[] { "Hello", "YesSql" }
             };
 
             // saving the post to the database
-            using(var session = store.CreateSession())
+            using (var session = store.CreateSession())
             {
                 session.Save(post);
             }
 
             // loading a single blog post
-            using(var session = store.CreateSession())
+            using (var session = store.CreateSession())
             {
                 var p = session.QueryAsync().For<BlogPost>().FirstOrDefault().Result;
                 Console.WriteLine(p.Title); // > Hello YesSql

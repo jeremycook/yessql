@@ -16,7 +16,7 @@ namespace YesSql.Samples.FullText.Indexes
             context.For<ArticleByWord, string>()
                 .Map(article => filter
                     .Filter(tokenizer.Tokenize(article.Content))
-                    .Select(x => new ArticleByWord {Word = x, Count = 1})
+                    .Select(x => new ArticleByWord { Word = x, Count = 1 })
                 )
                 .Group(article => article.Word)
                 .Reduce(group => new ArticleByWord
@@ -24,7 +24,8 @@ namespace YesSql.Samples.FullText.Indexes
                     Word = group.Key,
                     Count = group.Sum(y => y.Count)
                 })
-                .Delete((index, map) => {
+                .Delete((index, map) =>
+                {
                     index.Count -= map.Sum(x => x.Count);
 
                     // if Count == 0 then delete the index

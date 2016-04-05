@@ -10,30 +10,32 @@ namespace YesSql.Samples.Hi.Indexes
         {
             // for each BlogPost, create a BlogPostByAuthor index
             context.For<BlogPostByAuthor>()
-                .Map( blogPost => 
-                    new BlogPostByAuthor { Author = blogPost.Author }
+                .Map(blogPost =>
+                   new BlogPostByAuthor { Author = blogPost.Author }
                 );
 
             // for each BlogPost, aggregate in an exiting BlogPostByDay
             context.For<BlogPostByDay, string>()
-                .Map( blogPost => 
-                    new BlogPostByDay {
-                            Day = blogPost.PublishedUtc.ToString("yyyyMMdd"),
-                            Count = 1
-                    })
-                .Group( blogPost => blogPost.Day)
-                .Reduce( group => 
-                    new BlogPostByDay {
-                        Day = group.Key,
-                        Count = group.Sum(p => p.Count)
-                    })
-                .Delete( (index, map) => 
-                    {
-                        index.Count -= map.Sum(x => x.Count);
+                .Map(blogPost =>
+                   new BlogPostByDay
+                   {
+                       Day = blogPost.PublishedUtc.ToString("yyyyMMdd"),
+                       Count = 1
+                   })
+                .Group(blogPost => blogPost.Day)
+                .Reduce(group =>
+                   new BlogPostByDay
+                   {
+                       Day = group.Key,
+                       Count = group.Sum(p => p.Count)
+                   })
+                .Delete((index, map) =>
+                   {
+                       index.Count -= map.Sum(x => x.Count);
 
                         // if Count == 0 then delete the index
                         return index.Count > 0 ? index : null;
-                    }
+                   }
             );
         }
     }
